@@ -9,10 +9,8 @@ import 'data/repositories/notification_repository.dart';
 import 'data/repositories/settings_repository.dart';
 import 'features/notifications/detail_screen.dart';
 import 'features/notifications/home_screen.dart';
-import 'features/onboarding/welcome_screen.dart';
 import 'features/permissions/permission_setup_screen.dart';
 import 'features/settings/app_filter_screen.dart';
-import 'features/settings/settings_screen.dart';
 import 'features/splash/splash_screen.dart';
 import 'services/android_bridge_service.dart';
 
@@ -32,12 +30,14 @@ class _NotiSaverAppState extends State<NotiSaverApp>
   StreamSubscription<SavedNotification>? _liveSubscription;
 
   bool _isReady = false;
-  bool _hasCompletedOnboarding = false;
   bool _hasCompletedPermissionSetup = false;
   bool _notificationAccessEnabled = false;
   bool _batteryOptimizationIgnored = false;
   bool _darkModeEnabled = false;
-  int _autoDeleteDays = 30;
+  bool _unreadFirstEnabled = true;
+  bool _appGroupingEnabled = true;
+  SearchScope _searchScope = SearchScope.fullContent;
+  bool _exactMatchSearchEnabled = false;
   Set<String> _excludedPackages = <String>{};
   List<SavedNotification> _notifications = <SavedNotification>[];
 
@@ -68,21 +68,26 @@ class _NotiSaverAppState extends State<NotiSaverApp>
 
   Future<void> _bootstrap() async {
     final splashDelay = Future<void>.delayed(const Duration(milliseconds: 1500));
-    final hasCompletedOnboardingFuture =
-        _settingsRepository.getOnboardingCompleted();
     final hasCompletedPermissionSetupFuture =
         _settingsRepository.getPermissionsSetupCompleted();
     final darkModeEnabledFuture = _settingsRepository.getDarkModeEnabled();
-    final autoDeleteDaysFuture = _settingsRepository.getAutoDeleteDays();
+    final unreadFirstEnabledFuture = _settingsRepository.getUnreadFirstEnabled();
+    final appGroupingEnabledFuture = _settingsRepository.getAppGroupingEnabled();
+    final searchScopeFuture = _settingsRepository.getSearchScope();
+    final exactMatchSearchEnabledFuture =
+        _settingsRepository.getExactMatchSearchEnabled();
     final excludedPackagesFuture = _settingsRepository.getExcludedPackages();
 
-    final hasCompletedOnboarding = await hasCompletedOnboardingFuture;
     final hasCompletedPermissionSetup = await hasCompletedPermissionSetupFuture;
     final darkModeEnabled = await darkModeEnabledFuture;
-    final autoDeleteDays = await autoDeleteDaysFuture;
+    final unreadFirstEnabled = await unreadFirstEnabledFuture;
+    final appGroupingEnabled = await appGroupingEnabledFuture;
+    final searchScopeValue = await searchScopeFuture;
+    final exactMatchSearchEnabled = await exactMatchSearchEnabledFuture;
     final excludedPackages = await excludedPackagesFuture;
 
-    await _notificationRepository.purgeOlderThan(autoDeleteDays);
+    await _notificationRepository
+        .purgeOlderThan(SettingsRepository.defaultAutoDeleteDays);
 
     _liveSubscription?.cancel();
     _liveSubscription = _androidBridgeService.notifications.listen(
@@ -100,12 +105,17 @@ class _NotiSaverAppState extends State<NotiSaverApp>
     }
 
     setState(() {
-      _hasCompletedOnboarding = hasCompletedOnboarding;
       _hasCompletedPermissionSetup = hasCompletedPermissionSetup &&
           statuses.notificationAccessEnabled &&
           statuses.batteryOptimizationIgnored;
       _darkModeEnabled = darkModeEnabled;
-      _autoDeleteDays = autoDeleteDays;
+      _unreadFirstEnabled = unreadFirstEnabled;
+      _appGroupingEnabled = appGroupingEnabled;
+      _searchScope = SearchScope.values.firstWhere(
+        (scope) => scope.name == searchScopeValue,
+        orElse: () => SearchScope.fullContent,
+      );
+      _exactMatchSearchEnabled = exactMatchSearchEnabled;
       _excludedPackages = excludedPackages;
       _notificationAccessEnabled = statuses.notificationAccessEnabled;
       _batteryOptimizationIgnored = statuses.batteryOptimizationIgnored;
@@ -177,18 +187,6 @@ class _NotiSaverAppState extends State<NotiSaverApp>
     });
   }
 
-  Future<void> _completeOnboarding() async {
-    await _settingsRepository.setOnboardingCompleted(true);
-    await _settingsRepository.setPermissionsSetupCompleted(false);
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _hasCompletedOnboarding = true;
-      _hasCompletedPermissionSetup = false;
-    });
-  }
-
   Future<void> _completePermissionSetup() async {
     await _refreshPermissionStatus();
     if (!_notificationAccessEnabled || !_batteryOptimizationIgnored) {
@@ -224,11 +222,6 @@ class _NotiSaverAppState extends State<NotiSaverApp>
     await _refreshNotifications();
   }
 
-  Future<void> _clearAllNotifications() async {
-    await _notificationRepository.clearAll();
-    await _refreshNotifications();
-  }
-
   Future<void> _markAllNotificationsAsRead() async {
     await _notificationRepository.markAllAsRead();
     await _refreshNotifications();
@@ -244,18 +237,6 @@ class _NotiSaverAppState extends State<NotiSaverApp>
     });
   }
 
-  Future<void> _updateAutoDeleteDays(int value) async {
-    await _settingsRepository.setAutoDeleteDays(value);
-    await _notificationRepository.purgeOlderThan(value);
-    await _refreshNotifications();
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      _autoDeleteDays = value;
-    });
-  }
-
   Future<void> _updateExcludedPackages(Set<String> value) async {
     await _settingsRepository.setExcludedPackages(value);
     await _refreshNotifications();
@@ -264,6 +245,46 @@ class _NotiSaverAppState extends State<NotiSaverApp>
     }
     setState(() {
       _excludedPackages = value;
+    });
+  }
+
+  Future<void> _updateUnreadFirstEnabled(bool value) async {
+    await _settingsRepository.setUnreadFirstEnabled(value);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _unreadFirstEnabled = value;
+    });
+  }
+
+  Future<void> _updateAppGroupingEnabled(bool value) async {
+    await _settingsRepository.setAppGroupingEnabled(value);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _appGroupingEnabled = value;
+    });
+  }
+
+  Future<void> _updateSearchScope(SearchScope value) async {
+    await _settingsRepository.setSearchScope(value.name);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _searchScope = value;
+    });
+  }
+
+  Future<void> _updateExactMatchSearchEnabled(bool value) async {
+    await _settingsRepository.setExactMatchSearchEnabled(value);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _exactMatchSearchEnabled = value;
     });
   }
 
@@ -289,32 +310,6 @@ class _NotiSaverAppState extends State<NotiSaverApp>
       ),
     );
     await _refreshNotifications();
-  }
-
-  Future<void> _openSettings() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (context) => SettingsScreen(
-          darkModeEnabled: _darkModeEnabled,
-          autoDeleteDays: _autoDeleteDays,
-          notificationAccessEnabled: _notificationAccessEnabled,
-          batteryOptimizationIgnored: _batteryOptimizationIgnored,
-          onDarkModeChanged: _toggleDarkMode,
-          onAutoDeleteDaysChanged: _updateAutoDeleteDays,
-          onOpenNotificationAccess: () async {
-            await _androidBridgeService.openNotificationAccessSettings();
-            await _refreshPermissionStatus();
-          },
-          onOpenBatterySettings: () async {
-            await _androidBridgeService.requestIgnoreBatteryOptimizations();
-            await _refreshPermissionStatus();
-          },
-          onOpenAppFilter: _openAppFilter,
-          onClearAll: _clearAllNotifications,
-        ),
-      ),
-    );
-    await _refreshPermissionStatus();
   }
 
   Future<void> _openAppFilter() async {
@@ -359,9 +354,7 @@ class _NotiSaverAppState extends State<NotiSaverApp>
           ? const _AndroidOnlyScreen()
           : !_isReady
           ? const SplashScreen()
-          : !_hasCompletedOnboarding
-              ? WelcomeScreen(onGetStarted: _completeOnboarding)
-              : !_hasCompletedPermissionSetup
+          : !_hasCompletedPermissionSetup
                   ? PermissionSetupScreen(
                       notificationAccessEnabled: _notificationAccessEnabled,
                       batteryOptimizationIgnored: _batteryOptimizationIgnored,
@@ -382,20 +375,42 @@ class _NotiSaverAppState extends State<NotiSaverApp>
                                 .contains(notification.packageName),
                           )
                           .toList(),
-                      notificationAccessEnabled: _notificationAccessEnabled,
-                      batteryOptimizationIgnored: _batteryOptimizationIgnored,
                       onRefresh: () async {
                         await _refreshNotifications();
                         await _refreshPermissionStatus();
                       },
                       onToggleFavorite: _toggleFavorite,
-                      onDelete: (notification) =>
-                          _deleteNotification(notification.id!),
-                      onClearAll: _clearAllNotifications,
                       onMarkAllAsRead: _markAllNotificationsAsRead,
                       onOpenDetail: _navigateToDetail,
-                      onOpenSettings: _openSettings,
+                      darkModeEnabled: _darkModeEnabled,
+                      excludedAppsCount: _excludedPackages.length,
+                      unreadFirstEnabled: _unreadFirstEnabled,
+                      appGroupingEnabled: _appGroupingEnabled,
+                      searchScope: _searchScope,
+                      exactMatchSearchEnabled: _exactMatchSearchEnabled,
+                      notificationAccessEnabled: _notificationAccessEnabled,
+                      batteryOptimizationIgnored: _batteryOptimizationIgnored,
+                      onDarkModeChanged: _toggleDarkMode,
+                      onUnreadFirstChanged: _updateUnreadFirstEnabled,
+                      onAppGroupingChanged: _updateAppGroupingEnabled,
+                      onSearchScopeChanged: _updateSearchScope,
+                      onExactMatchSearchChanged:
+                          _updateExactMatchSearchEnabled,
+                      onOpenNotificationAccess: () async {
+                        await _androidBridgeService
+                            .openNotificationAccessSettings();
+                        await _refreshPermissionStatus();
+                      },
+                      onOpenBatteryOptimization: () async {
+                        await _androidBridgeService
+                            .requestIgnoreBatteryOptimizations();
+                        await _refreshPermissionStatus();
+                      },
                       onOpenAppFilter: _openAppFilter,
+                      onLoadReliabilityStatus:
+                          _androidBridgeService.getReliabilityStatus,
+                      onRefreshListenerBinding:
+                          _androidBridgeService.refreshListenerBinding,
                     ),
     );
   }

@@ -19,6 +19,44 @@ class InstalledApp {
   }
 }
 
+class BackgroundReliabilityStatus {
+  const BackgroundReliabilityStatus({
+    required this.notificationAccessEnabled,
+    required this.batteryOptimizationIgnored,
+    required this.lastListenerConnectedAt,
+    required this.lastNotificationCapturedAt,
+    required this.lastRebindRequestedAt,
+    required this.pendingCount,
+  });
+
+  final bool notificationAccessEnabled;
+  final bool batteryOptimizationIgnored;
+  final DateTime? lastListenerConnectedAt;
+  final DateTime? lastNotificationCapturedAt;
+  final DateTime? lastRebindRequestedAt;
+  final int pendingCount;
+
+  factory BackgroundReliabilityStatus.fromMap(Map<Object?, Object?> map) {
+    DateTime? parseTimestamp(Object? value) {
+      final raw = (value as num?)?.toInt() ?? 0;
+      if (raw <= 0) return null;
+      return DateTime.fromMillisecondsSinceEpoch(raw);
+    }
+
+    return BackgroundReliabilityStatus(
+      notificationAccessEnabled:
+          (map['notificationAccessEnabled'] as bool?) ?? false,
+      batteryOptimizationIgnored:
+          (map['batteryOptimizationIgnored'] as bool?) ?? false,
+      lastListenerConnectedAt: parseTimestamp(map['lastListenerConnectedAt']),
+      lastNotificationCapturedAt:
+          parseTimestamp(map['lastNotificationCapturedAt']),
+      lastRebindRequestedAt: parseTimestamp(map['lastRebindRequestedAt']),
+      pendingCount: (map['pendingCount'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
 class AndroidBridgeService {
   static const MethodChannel _methodChannel =
       MethodChannel('notisaver/methods');
@@ -81,5 +119,18 @@ class AndroidBridgeService {
           ),
         )
         .toList();
+  }
+
+  Future<BackgroundReliabilityStatus> getReliabilityStatus() async {
+    final rawStatus =
+        await _methodChannel.invokeMethod<Map<Object?, Object?>>(
+              'getReliabilityStatus',
+            ) ??
+            <Object?, Object?>{};
+    return BackgroundReliabilityStatus.fromMap(rawStatus);
+  }
+
+  Future<void> refreshListenerBinding() async {
+    await _methodChannel.invokeMethod<void>('refreshListenerBinding');
   }
 }
