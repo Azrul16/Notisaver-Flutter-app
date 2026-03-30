@@ -15,7 +15,27 @@
 [![View Repository](https://img.shields.io/badge/View-Repository-111827?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Azrul16/Notisaver-Flutter-app)
 [![Star the Repo](https://img.shields.io/badge/Star-the%20Repo-F59E0B?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Azrul16/Notisaver-Flutter-app)
 [![Fork the Repo](https://img.shields.io/badge/Fork-NotiSaver-2563EB?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Azrul16/Notisaver-Flutter-app/fork)
+[![Open Issues](https://img.shields.io/badge/Issues-Welcome-E11D48?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Azrul16/Notisaver-Flutter-app/issues)
 
+</div>
+
+<br />
+
+<div align="center">
+
+[![GitHub stars](https://img.shields.io/github/stars/Azrul16/Notisaver-Flutter-app?style=flat-square)](https://github.com/Azrul16/Notisaver-Flutter-app/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/Azrul16/Notisaver-Flutter-app?style=flat-square)](https://github.com/Azrul16/Notisaver-Flutter-app/network/members)
+[![GitHub issues](https://img.shields.io/github/issues/Azrul16/Notisaver-Flutter-app?style=flat-square)](https://github.com/Azrul16/Notisaver-Flutter-app/issues)
+[![GitHub last commit](https://img.shields.io/github/last-commit/Azrul16/Notisaver-Flutter-app?style=flat-square)](https://github.com/Azrul16/Notisaver-Flutter-app/commits/main)
+
+</div>
+
+<br />
+
+<div align="center">
+  <img src="https://img.shields.io/badge/LOCAL%20FIRST-NOTIFICATION%20ARCHIVE-1D4ED8?style=for-the-badge" alt="Local first banner" />
+  <img src="https://img.shields.io/badge/ANDROID-CHAT--STYLE%20HISTORY-0F766E?style=for-the-badge" alt="Android chat history banner" />
+  <img src="https://img.shields.io/badge/MODERN%20UI-ANIMATED%20SURFACES-7C3AED?style=for-the-badge" alt="Modern UI banner" />
 </div>
 
 <br />
@@ -40,7 +60,7 @@
       </ul>
     </td>
     <td width="42%" align="center">
-      <img src="./imagesForGithub/settings.jpg" alt="NotiSaver hero preview" width="100%" />
+      <img src="./imagesForGithub/splash%20screen.jpg" alt="NotiSaver splash preview" width="100%" />
     </td>
   </tr>
 </table>
@@ -63,6 +83,7 @@
 - [Suggested Workflow](#suggested-workflow)
 - [Contributing](#contributing)
 - [Issues and Feedback](#issues-and-feedback)
+- [FAQ](#faq)
 - [Status](#status)
 - [Support](#support)
 
@@ -107,6 +128,14 @@ flutter build apk --debug
   <img src="./imagesForGithub/messege%20screen.jpg" alt="Message screen" width="22%" />
   <img src="./imagesForGithub/notification.jpg" alt="Notification thread screen" width="22%" />
   <img src="./imagesForGithub/settings.jpg" alt="Settings screen" width="22%" />
+</div>
+
+<br />
+
+<div align="center">
+  <img src="https://img.shields.io/badge/FAST%20SETUP-READY%20IN%2060%20SECONDS-2563EB?style=for-the-badge" alt="Fast setup banner" />
+  <img src="https://img.shields.io/badge/SEARCH-SMART%20FILTERS-0891B2?style=for-the-badge" alt="Smart filters banner" />
+  <img src="https://img.shields.io/badge/SETTINGS-RICH%20CONTROL%20CENTER-9333EA?style=for-the-badge" alt="Settings banner" />
 </div>
 
 ## Feature Comparison
@@ -372,6 +401,50 @@ Repository issues page:
 
 - https://github.com/Azrul16/Notisaver-Flutter-app/issues
 
+## FAQ
+
+### Is NotiSaver Android-only?
+
+Yes. The project is built around Android notification-listener access, so the core experience is intended for Android devices.
+
+### Does NotiSaver upload my notifications anywhere?
+
+No by default. Notifications are stored locally on-device using SQLite.
+
+### Why does the app need notification access?
+
+Android requires notification-listener permission for apps that want to read and archive incoming notifications.
+
+### Why is battery optimization important?
+
+Some Android devices aggressively stop background services. Exempting the app from battery optimization can improve notification capture reliability.
+
+### Why might behavior differ across phones?
+
+Device brands often customize Android background rules. Auto-start, background protection, and battery settings may affect reliability.
+
+### Where are notifications shown inside the app?
+
+They are organized into:
+
+- `Messages` for conversation-like notifications
+- `Apps` for app-grouped notifications
+- `Settings` for preferences, reliability, and insights
+
+### How do I build an APK?
+
+Use:
+
+```bash
+flutter build apk --debug
+```
+
+or for release:
+
+```bash
+flutter build apk --release
+```
+
 ## Status
 
 This project is currently in a strong MVP / polished prototype stage:
@@ -385,10 +458,37 @@ It is ready for more device testing, cleanup, and release preparation.
 
 ## Support
 
-If you like this project or want to follow its progress:
+<div align="center">
 
-- **Star** the repository
-- **Fork** it and experiment with your own version
-- Share feedback or ideas on GitHub
+## Support NotiSaver
+
+If you like the project, want to follow updates, or want to build your own version, these help a lot:
+
+[![Star the Repo](https://img.shields.io/badge/STAR-NotiSaver-F59E0B?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Azrul16/Notisaver-Flutter-app)
+[![Fork the Repo](https://img.shields.io/badge/FORK-Build%20Your%20Version-2563EB?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Azrul16/Notisaver-Flutter-app/fork)
+[![Open an Issue](https://img.shields.io/badge/FEEDBACK-Open%20an%20Issue-E11D48?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Azrul16/Notisaver-Flutter-app/issues)
+
+</div>
+
+<table align="center">
+  <tr>
+    <td width="33%" align="center">
+      <h3>Star</h3>
+      <p>Show support and make the project easier for others to discover.</p>
+    </td>
+    <td width="33%" align="center">
+      <h3>Fork</h3>
+      <p>Create your own version, experiment with features, and build on the idea.</p>
+    </td>
+    <td width="33%" align="center">
+      <h3>Feedback</h3>
+      <p>Report bugs, suggest features, and help improve device reliability.</p>
+    </td>
+  </tr>
+</table>
+
+<div align="center">
 
 Repository: https://github.com/Azrul16/Notisaver-Flutter-app
+
+</div>
