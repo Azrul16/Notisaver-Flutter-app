@@ -57,6 +57,29 @@ class BackgroundReliabilityStatus {
   }
 }
 
+class DevicePowerProfile {
+  const DevicePowerProfile({
+    required this.manufacturer,
+    required this.brand,
+    required this.model,
+    required this.isXiaomiFamily,
+  });
+
+  final String manufacturer;
+  final String brand;
+  final String model;
+  final bool isXiaomiFamily;
+
+  factory DevicePowerProfile.fromMap(Map<Object?, Object?> map) {
+    return DevicePowerProfile(
+      manufacturer: (map['manufacturer'] as String?) ?? '',
+      brand: (map['brand'] as String?) ?? '',
+      model: (map['model'] as String?) ?? '',
+      isXiaomiFamily: (map['isXiaomiFamily'] as bool?) ?? false,
+    );
+  }
+}
+
 class AndroidBridgeService {
   static const MethodChannel _methodChannel =
       MethodChannel('notisaver/methods');
@@ -103,6 +126,25 @@ class AndroidBridgeService {
         .whereType<Map>()
         .map((app) => InstalledApp.fromMap(Map<Object?, Object?>.from(app)))
         .toList();
+  }
+
+  Future<DevicePowerProfile> getDevicePowerProfile() async {
+    final rawProfile =
+        await _methodChannel.invokeMethod<Map<Object?, Object?>>(
+              'getDevicePowerProfile',
+            ) ??
+            <Object?, Object?>{};
+    return DevicePowerProfile.fromMap(rawProfile);
+  }
+
+  Future<bool> openAutoStartSettings() async {
+    return (await _methodChannel.invokeMethod<bool>('openAutoStartSettings')) ??
+        false;
+  }
+
+  Future<bool> openAppDetailsSettings() async {
+    return (await _methodChannel.invokeMethod<bool>('openAppDetailsSettings')) ??
+        false;
   }
 
   Future<List<SavedNotification>> consumePendingNotifications() async {

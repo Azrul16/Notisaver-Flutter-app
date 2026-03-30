@@ -31,6 +31,7 @@ class HomeScreen extends StatefulWidget {
     required this.exactMatchSearchEnabled,
     required this.notificationAccessEnabled,
     required this.batteryOptimizationIgnored,
+    required this.devicePowerProfile,
     required this.onDarkModeChanged,
     required this.onUnreadFirstChanged,
     required this.onAppGroupingChanged,
@@ -38,6 +39,8 @@ class HomeScreen extends StatefulWidget {
     required this.onExactMatchSearchChanged,
     required this.onOpenNotificationAccess,
     required this.onOpenBatteryOptimization,
+    required this.onOpenAutoStartSettings,
+    required this.onOpenAppDetailsSettings,
     required this.onOpenAppFilter,
     required this.onLoadReliabilityStatus,
     required this.onRefreshListenerBinding,
@@ -56,6 +59,7 @@ class HomeScreen extends StatefulWidget {
   final bool exactMatchSearchEnabled;
   final bool notificationAccessEnabled;
   final bool batteryOptimizationIgnored;
+  final DevicePowerProfile devicePowerProfile;
   final Future<void> Function(bool value) onDarkModeChanged;
   final Future<void> Function(bool value) onUnreadFirstChanged;
   final Future<void> Function(bool value) onAppGroupingChanged;
@@ -63,6 +67,8 @@ class HomeScreen extends StatefulWidget {
   final Future<void> Function(bool value) onExactMatchSearchChanged;
   final Future<void> Function() onOpenNotificationAccess;
   final Future<void> Function() onOpenBatteryOptimization;
+  final Future<bool> Function() onOpenAutoStartSettings;
+  final Future<bool> Function() onOpenAppDetailsSettings;
   final Future<void> Function() onOpenAppFilter;
   final Future<BackgroundReliabilityStatus> Function() onLoadReliabilityStatus;
   final Future<void> Function() onRefreshListenerBinding;
@@ -210,6 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   exactMatchSearchEnabled: widget.exactMatchSearchEnabled,
                   notificationAccessEnabled: widget.notificationAccessEnabled,
                   batteryOptimizationIgnored: widget.batteryOptimizationIgnored,
+                  devicePowerProfile: widget.devicePowerProfile,
                   onDarkModeChanged: widget.onDarkModeChanged,
                   onUnreadFirstChanged: widget.onUnreadFirstChanged,
                   onAppGroupingChanged: widget.onAppGroupingChanged,
@@ -218,6 +225,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       widget.onExactMatchSearchChanged,
                   onOpenNotificationAccess: widget.onOpenNotificationAccess,
                   onOpenBatteryOptimization: widget.onOpenBatteryOptimization,
+                  onOpenAutoStartSettings: widget.onOpenAutoStartSettings,
+                  onOpenAppDetailsSettings: widget.onOpenAppDetailsSettings,
                   onOpenAppFilter: widget.onOpenAppFilter,
                   onLoadReliabilityStatus: widget.onLoadReliabilityStatus,
                   onRefreshListenerBinding: widget.onRefreshListenerBinding,
@@ -467,6 +476,7 @@ class _SettingsTabView extends StatefulWidget {
     required this.exactMatchSearchEnabled,
     required this.notificationAccessEnabled,
     required this.batteryOptimizationIgnored,
+    required this.devicePowerProfile,
     required this.onDarkModeChanged,
     required this.onUnreadFirstChanged,
     required this.onAppGroupingChanged,
@@ -474,6 +484,8 @@ class _SettingsTabView extends StatefulWidget {
     required this.onExactMatchSearchChanged,
     required this.onOpenNotificationAccess,
     required this.onOpenBatteryOptimization,
+    required this.onOpenAutoStartSettings,
+    required this.onOpenAppDetailsSettings,
     required this.onOpenAppFilter,
     required this.onLoadReliabilityStatus,
     required this.onRefreshListenerBinding,
@@ -488,6 +500,7 @@ class _SettingsTabView extends StatefulWidget {
   final bool exactMatchSearchEnabled;
   final bool notificationAccessEnabled;
   final bool batteryOptimizationIgnored;
+  final DevicePowerProfile devicePowerProfile;
   final Future<void> Function(bool value) onDarkModeChanged;
   final Future<void> Function(bool value) onUnreadFirstChanged;
   final Future<void> Function(bool value) onAppGroupingChanged;
@@ -495,6 +508,8 @@ class _SettingsTabView extends StatefulWidget {
   final Future<void> Function(bool value) onExactMatchSearchChanged;
   final Future<void> Function() onOpenNotificationAccess;
   final Future<void> Function() onOpenBatteryOptimization;
+  final Future<bool> Function() onOpenAutoStartSettings;
+  final Future<bool> Function() onOpenAppDetailsSettings;
   final Future<void> Function() onOpenAppFilter;
   final Future<BackgroundReliabilityStatus> Function() onLoadReliabilityStatus;
   final Future<void> Function() onRefreshListenerBinding;
@@ -506,6 +521,7 @@ class _SettingsTabView extends StatefulWidget {
 class _SettingsTabViewState extends State<_SettingsTabView> {
   BackgroundReliabilityStatus? _reliabilityStatus;
   bool _loadingReliability = true;
+  bool _openingVendorSettings = false;
   late int _excludedAppsCount;
   late bool _unreadFirstEnabled;
   late bool _appGroupingEnabled;
@@ -608,6 +624,42 @@ class _SettingsTabViewState extends State<_SettingsTabView> {
     setState(() {
       _exactMatchSearchEnabled = value;
     });
+  }
+
+  Future<void> _openAutoStartSettings() async {
+    await _runVendorAction(
+      action: widget.onOpenAutoStartSettings,
+      failureMessage: 'Could not open the Xiaomi autostart screen.',
+    );
+  }
+
+  Future<void> _openAppDetailsSettings() async {
+    await _runVendorAction(
+      action: widget.onOpenAppDetailsSettings,
+      failureMessage: 'Could not open the app details screen.',
+    );
+  }
+
+  Future<void> _runVendorAction({
+    required Future<bool> Function() action,
+    required String failureMessage,
+  }) async {
+    if (!mounted) return;
+    setState(() {
+      _openingVendorSettings = true;
+    });
+
+    final opened = await action();
+    if (!mounted) return;
+    setState(() {
+      _openingVendorSettings = false;
+    });
+
+    if (!opened) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(failureMessage)),
+      );
+    }
   }
 
   _NotificationInsights get _insights {
@@ -962,6 +1014,125 @@ class _SettingsTabViewState extends State<_SettingsTabView> {
             ],
           ),
         ),
+        if (widget.devicePowerProfile.isXiaomiFamily) ...<Widget>[
+          const SizedBox(height: 14),
+          _SectionCard(
+            palette: palette,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                _SectionHeader(
+                  palette: palette,
+                  icon: Icons.shield_moon_rounded,
+                  title: 'Xiaomi background protection',
+                  subtitle:
+                      'MIUI can stop notification listeners after you clear recent apps.',
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: <Color>[
+                        palette.accentSoft,
+                        palette.surfaceAlt,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: palette.accent.withValues(alpha: 0.28),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Row(
+                        children: <Widget>[
+                          Container(
+                            width: 46,
+                            height: 46,
+                            decoration: BoxDecoration(
+                              color: palette.surfaceStrong,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Icon(
+                              Icons.phone_android_rounded,
+                              color: palette.accent,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(
+                                  '${widget.devicePowerProfile.brand} ${widget.devicePowerProfile.model}',
+                                  style: TextStyle(
+                                    color: palette.textPrimary,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Recommended for Xiaomi, Redmi, and Poco devices.',
+                                  style: TextStyle(
+                                    color: palette.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: <Widget>[
+                          FilledButton.icon(
+                            onPressed: _openingVendorSettings
+                                ? null
+                                : _openAutoStartSettings,
+                            icon: const Icon(Icons.rocket_launch_rounded),
+                            label: const Text('Open autostart'),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: _openingVendorSettings
+                                ? null
+                                : _openAppDetailsSettings,
+                            icon: const Icon(Icons.settings_rounded),
+                            label: const Text('App details'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      _VendorTipRow(
+                        palette: palette,
+                        icon: Icons.lock_clock_rounded,
+                        text: 'Lock NotiSaver in recents so MIUI does not clear it.',
+                      ),
+                      const SizedBox(height: 10),
+                      _VendorTipRow(
+                        palette: palette,
+                        icon: Icons.battery_6_bar_rounded,
+                        text: 'Set Battery saver to No restrictions for NotiSaver.',
+                      ),
+                      const SizedBox(height: 10),
+                      _VendorTipRow(
+                        palette: palette,
+                        icon: Icons.play_circle_fill_rounded,
+                        text: 'Turn on Autostart for NotiSaver in MIUI settings.',
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 14),
         _SectionCard(
           palette: palette,
@@ -1520,6 +1691,15 @@ class _SettingActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const successColor = Color(0xFF22C55E);
+    final statusColor = accentStatus ? successColor : palette.textSecondary;
+    final statusBackground = accentStatus
+        ? successColor.withValues(alpha: 0.14)
+        : palette.surfaceAlt;
+    final statusBorder = accentStatus
+        ? successColor.withValues(alpha: 0.35)
+        : palette.border;
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -1528,10 +1708,12 @@ class _SettingActionTile extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: palette.accentSoft,
+              color: accentStatus
+                  ? successColor.withValues(alpha: 0.16)
+                  : palette.accentSoft,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: palette.accent),
+            child: Icon(icon, color: accentStatus ? successColor : palette.accent),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -1553,6 +1735,8 @@ class _SettingActionTile extends StatelessWidget {
                       palette: palette,
                       label: statusLabel,
                       accent: accentStatus,
+                      accentColor: accentStatus ? successColor : null,
+                      icon: accentStatus ? Icons.check_circle_rounded : null,
                     ),
                   ],
                 ),
@@ -1564,6 +1748,39 @@ class _SettingActionTile extends StatelessWidget {
                     height: 1.3,
                   ),
                 ),
+                if (accentStatus) ...<Widget>[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusBackground,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: statusBorder),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Icon(
+                          Icons.verified_rounded,
+                          size: 15,
+                          color: statusColor,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Everything looks good',
+                          style: TextStyle(
+                            color: statusColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1583,30 +1800,52 @@ class _StatusBadge extends StatelessWidget {
     required this.palette,
     required this.label,
     this.accent = false,
+    this.accentColor,
+    this.icon,
   });
 
   final AppPalette palette;
   final String label;
   final bool accent;
+  final Color? accentColor;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
+    final resolvedAccentColor = accentColor ?? palette.accent;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: accent ? palette.accentSoft : palette.surfaceAlt,
+        color: accent
+            ? resolvedAccentColor.withValues(alpha: 0.14)
+            : palette.surfaceAlt,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: accent ? palette.accent.withValues(alpha: 0.4) : palette.border,
+          color: accent
+              ? resolvedAccentColor.withValues(alpha: 0.35)
+              : palette.border,
         ),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: accent ? palette.accent : palette.textSecondary,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (icon != null) ...<Widget>[
+            Icon(
+              icon,
+              size: 13,
+              color: accent ? resolvedAccentColor : palette.textSecondary,
+            ),
+            const SizedBox(width: 5),
+          ],
+          Text(
+            label,
+            style: TextStyle(
+              color: accent ? resolvedAccentColor : palette.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1686,6 +1925,46 @@ class _InsightChip extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _VendorTipRow extends StatelessWidget {
+  const _VendorTipRow({
+    required this.palette,
+    required this.icon,
+    required this.text,
+  });
+
+  final AppPalette palette;
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: palette.surfaceStrong,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 16, color: palette.accent),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: palette.textSecondary,
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
