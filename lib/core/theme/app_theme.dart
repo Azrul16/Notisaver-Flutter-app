@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 
+import 'app_colors.dart';
+
 class AppTheme {
   static ThemeData get lightTheme {
-    const seed = Color(0xFF0E7490);
+    const palette = AppColors.light;
     return ThemeData(
       colorScheme: ColorScheme.fromSeed(
-        seedColor: seed,
+        seedColor: palette.seed,
         brightness: Brightness.light,
       ),
       useMaterial3: true,
-      scaffoldBackgroundColor: const Color(0xFFF4F7FB),
+      scaffoldBackgroundColor: palette.scaffold,
       cardTheme: CardThemeData(
         elevation: 0,
-        color: Colors.white,
+        color: palette.surface,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
@@ -20,7 +22,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: palette.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20),
           borderSide: BorderSide.none,
@@ -30,17 +32,17 @@ class AppTheme {
   }
 
   static ThemeData get darkTheme {
-    const seed = Color(0xFF67E8F9);
+    const palette = AppColors.dark;
     return ThemeData(
       colorScheme: ColorScheme.fromSeed(
-        seedColor: seed,
+        seedColor: palette.seed,
         brightness: Brightness.dark,
       ),
       useMaterial3: true,
-      scaffoldBackgroundColor: const Color(0xFF07111A),
+      scaffoldBackgroundColor: palette.scaffold,
       cardTheme: CardThemeData(
         elevation: 0,
-        color: const Color(0xFF10202E),
+        color: palette.surface,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
@@ -48,7 +50,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF10202E),
+        fillColor: palette.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20),
           borderSide: BorderSide.none,

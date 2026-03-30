@@ -12,7 +12,9 @@ object NotificationAccessHelper {
             Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners")
                 ?: return false
         val componentName = ComponentName(context, NotificationListener::class.java)
-        return enabledListeners.contains(componentName.flattenToString())
+        return enabledListeners
+            .split(':')
+            .any { listener -> listener.equals(componentName.flattenToString(), ignoreCase = true) }
     }
 
     fun refreshListenerBinding(context: Context) {
@@ -20,8 +22,13 @@ object NotificationAccessHelper {
             return
         }
 
+        ReliabilityStore.markRebindRequested(context)
+
         val componentName = ComponentName(context, NotificationListener::class.java)
         val packageManager = context.packageManager
+
+        // Toggling the component nudges Android to reconnect the listener on
+        // devices where a plain requestRebind is ignored or unavailable.
         packageManager.setComponentEnabledSetting(
             componentName,
             PackageManager.COMPONENT_ENABLED_STATE_DISABLED,

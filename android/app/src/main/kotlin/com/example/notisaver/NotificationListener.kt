@@ -8,12 +8,12 @@ import android.service.notification.StatusBarNotification
 class NotificationListener : NotificationListenerService() {
     override fun onListenerConnected() {
         super.onListenerConnected()
-        NotificationAccessHelper.refreshListenerBinding(this)
+        ReliabilityStore.markListenerConnected(this)
     }
 
     override fun onListenerDisconnected() {
         super.onListenerDisconnected()
-        requestRebind(ComponentName(this, NotificationListener::class.java))
+        NotificationAccessHelper.refreshListenerBinding(this)
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
@@ -48,6 +48,7 @@ class NotificationListener : NotificationListenerService() {
             "appIconPath" to appIconPath
         )
 
+        ReliabilityStore.markNotificationCaptured(applicationContext)
         NotificationStore.enqueue(applicationContext, payload)
         NotificationBridge.emit(payload)
     }

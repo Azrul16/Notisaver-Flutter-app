@@ -10,54 +10,88 @@ class SplashScreen extends StatelessWidget {
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: <Color>[colors.primaryContainer, colors.surface],
+            colors: <Color>[
+              colors.primaryContainer,
+              colors.surface,
+              colors.secondaryContainer.withValues(alpha: 0.9),
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
         ),
         child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Container(
-                width: 112,
-                height: 112,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(32),
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(
-                      color: colors.primary.withValues(alpha: 0.16),
-                      blurRadius: 28,
-                      offset: const Offset(0, 12),
-                    ),
-                  ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+              decoration: BoxDecoration(
+                color: colors.surface.withValues(alpha: 0.78),
+                borderRadius: BorderRadius.circular(36),
+                border: Border.all(
+                  color: colors.primary.withValues(alpha: 0.16),
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(22),
-                  child: Image.asset(
-                    'AppIcons/playstore.png',
-                    fit: BoxFit.cover,
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: colors.primary.withValues(alpha: 0.14),
+                    blurRadius: 30,
+                    offset: const Offset(0, 16),
                   ),
-                ),
+                ],
               ),
-              const SizedBox(height: 20),
-              Text(
-                'NotiSaver',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Container(
+                    width: 128,
+                    height: 128,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.92),
+                      borderRadius: BorderRadius.circular(36),
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(
+                          color: colors.primary.withValues(alpha: 0.18),
+                          blurRadius: 32,
+                          offset: const Offset(0, 14),
+                        ),
+                      ],
                     ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(28),
+                      child: Image.asset(
+                        'AppIcons/appstore.png',
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  Text(
+                    'NotiSaver',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.2,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Save every alert. Find it anytime.',
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 26),
+                  SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      color: colors.primary,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Your saved notifications, all in one place.',
-                style: Theme.of(context).textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 28),
-              const CircularProgressIndicator(),
-            ],
+            ),
           ),
         ),
       ),

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/models/saved_notification.dart';
 
-class NotificationHistoryScreen extends StatelessWidget {
+class NotificationHistoryScreen extends StatefulWidget {
   const NotificationHistoryScreen({
     super.key,
     required this.title,
@@ -23,127 +23,200 @@ class NotificationHistoryScreen extends StatelessWidget {
   final Future<void> Function(SavedNotification notification) onOpenDetail;
 
   @override
+  State<NotificationHistoryScreen> createState() =>
+      _NotificationHistoryScreenState();
+}
+
+class _NotificationHistoryScreenState extends State<NotificationHistoryScreen> {
+  final TextEditingController _keywordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _keywordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final items = List<SavedNotification>.from(notifications)
-      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    final historyItems = _buildHistoryItems(items);
+    const background = Color(0xFF292B36);
+    const surface = Color(0xFF323440);
+    const divider = Color(0xFF414451);
+    const textPrimary = Color(0xFFF5F7FB);
+    const textSecondary = Color(0xFFADB3C2);
+    const accent = Color(0xFF61A8FF);
+
+    final filteredNotifications = _filteredNotifications();
+    final historyItems = _buildHistoryItems(filteredNotifications);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF2E2D37),
+      backgroundColor: background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF2E2D37),
-        foregroundColor: Colors.white,
-        title: Text(title),
+        backgroundColor: background,
+        foregroundColor: textPrimary,
+        elevation: 0,
+        leading: const BackButton(),
+        titleSpacing: 8,
+        title: Row(
+          children: <Widget>[
+            _HeaderAvatar(
+              title: widget.title,
+              avatarPath: widget.avatarPath,
+              appIconPath: widget.appIconPath,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    widget.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    widget.subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: const <Widget>[
+          Padding(
+            padding: EdgeInsets.only(right: 10),
+            child: Icon(Icons.search_rounded, color: textPrimary),
+          ),
+        ],
       ),
       body: Column(
         children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 4, 18, 12),
-            child: Row(
-              children: <Widget>[
-                _HeaderAvatar(
-                  title: title,
-                  avatarPath: avatarPath,
-                  appIconPath: appIconPath,
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        style: const TextStyle(color: Colors.white60),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
           Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
-              itemCount: historyItems.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                final item = historyItems[index];
-                return item.when(
-                  header: (label) => Padding(
-                    padding: const EdgeInsets.only(top: 6, bottom: 2),
+            child: historyItems.isEmpty
+                ? const Center(
                     child: Text(
-                      label,
-                      style: const TextStyle(
-                        color: Colors.white60,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      'No messages match this keyword',
+                      style: TextStyle(color: textSecondary),
                     ),
-                  ),
-                  notification: (notification) => Material(
-                    color: const Color(0xFF3A3943),
-                    borderRadius: BorderRadius.circular(20),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(20),
-                      onTap: () => onOpenDetail(notification),
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Row(
-                              children: <Widget>[
-                                Expanded(
-                                  child: Text(
-                                    notification.title.isNotEmpty
-                                        ? notification.title
-                                        : notification.appName,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  _historyTimeLabel(notification.timestamp),
-                                  style: const TextStyle(
-                                    color: Colors.white60,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              notification.message.isNotEmpty
-                                  ? notification.message
-                                  : notification.subText,
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                height: 1.35,
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 18),
+                    itemCount: historyItems.length,
+                    itemBuilder: (context, index) {
+                      final item = historyItems[index];
+                      return item.when(
+                        header: (label) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          child: Row(
+                            children: <Widget>[
+                              const Expanded(
+                                child: Divider(color: divider, thickness: 0.8),
                               ),
-                            ),
-                          ],
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 12),
+                                child: Text(
+                                  label,
+                                  style: const TextStyle(
+                                    color: textSecondary,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+                              const Expanded(
+                                child: Divider(color: divider, thickness: 0.8),
+                              ),
+                            ],
+                          ),
+                        ),
+                        notification: (notification) => Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: _ThreadMessageTile(
+                            notification: notification,
+                            appIconPath: widget.appIconPath,
+                            onTap: () => widget.onOpenDetail(notification),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          Container(
+            color: background,
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 14),
+            child: SafeArea(
+              top: false,
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: surface,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: TextField(
+                        controller: _keywordController,
+                        onChanged: (_) => setState(() {}),
+                        style: const TextStyle(color: textPrimary),
+                        decoration: const InputDecoration(
+                          hintText: 'Please enter keywords',
+                          hintStyle: TextStyle(color: textSecondary),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 14,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                );
-              },
+                  const SizedBox(width: 10),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: const BoxDecoration(
+                      color: accent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.send_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  List<SavedNotification> _filteredNotifications() {
+    final query = _keywordController.text.trim().toLowerCase();
+    final notifications = List<SavedNotification>.from(widget.notifications)
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    if (query.isEmpty) {
+      return notifications;
+    }
+    return notifications.where((notification) {
+      final haystack =
+          '${notification.title} ${notification.message} ${notification.subText} ${notification.appName}'
+              .toLowerCase();
+      return haystack.contains(query);
+    }).toList();
   }
 
   List<_HistoryItem> _buildHistoryItems(List<SavedNotification> items) {
@@ -161,13 +234,144 @@ class NotificationHistoryScreen extends StatelessWidget {
   }
 
   String _groupLabel(DateTime timestamp) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final target = DateTime(timestamp.year, timestamp.month, timestamp.day);
-    final difference = today.difference(target).inDays;
-    if (difference == 0) return 'Today';
-    if (difference == 1) return 'Yesterday';
-    return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
+    final date = timestamp.toLocal();
+    final month = _monthLabel(date.month);
+    return '$month ${date.day.toString().padLeft(2, '0')}, ${date.year}';
+  }
+
+  String _monthLabel(int month) {
+    const months = <String>[
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return months[month - 1];
+  }
+}
+
+class _ThreadMessageTile extends StatelessWidget {
+  const _ThreadMessageTile({
+    required this.notification,
+    required this.appIconPath,
+    required this.onTap,
+  });
+
+  final SavedNotification notification;
+  final String? appIconPath;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    const bubble = Color(0xFF3A3D49);
+    const textPrimary = Color(0xFFF5F7FB);
+    const textSecondary = Color(0xFFADB3C2);
+    const accent = Color(0xFF7EB8FF);
+
+    final message = notification.message.isNotEmpty
+        ? notification.message
+        : notification.subText.isNotEmpty
+        ? notification.subText
+        : notification.title;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            _BubbleAvatar(
+              title: notification.title.isNotEmpty
+                  ? notification.title
+                  : notification.appName,
+              avatarPath: notification.avatarPath,
+              appIconPath: appIconPath ?? notification.appIconPath,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.only(left: 2, bottom: 5),
+                    child: Text(
+                      _senderLabel(notification),
+                      style: const TextStyle(
+                        color: textSecondary,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: <Widget>[
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: bubble,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            message.isEmpty ? 'No message text' : message,
+                            style: const TextStyle(
+                              color: textPrimary,
+                              height: 1.35,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: Text(
+                          _timeLabel(notification.timestamp),
+                          style: TextStyle(
+                            color: notification.isRead ? textSecondary : accent,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _senderLabel(SavedNotification notification) {
+    final title = notification.title.trim();
+    final appName = notification.appName.trim();
+    if (title.isEmpty || title.toLowerCase() == appName.toLowerCase()) {
+      return appName;
+    }
+    return title;
+  }
+
+  String _timeLabel(DateTime timestamp) {
+    final local = timestamp.toLocal();
+    final hour = local.hour % 12 == 0 ? 12 : local.hour % 12;
+    final minute = local.minute.toString().padLeft(2, '0');
+    final suffix = local.hour >= 12 ? 'pm' : 'am';
+    return '$suffix $hour:$minute';
   }
 }
 
@@ -210,15 +414,58 @@ class _HeaderAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 58,
-      height: 58,
+      width: 36,
+      height: 36,
       child: Stack(
         clipBehavior: Clip.none,
         children: <Widget>[
-          Positioned.fill(child: _MainAvatar(title: title, path: avatarPath)),
+          Positioned.fill(
+            child: _MainAvatar(
+              title: title,
+              path: avatarPath,
+              radius: 18,
+            ),
+          ),
           Positioned(
-            right: -2,
-            bottom: -2,
+            right: -1,
+            bottom: -1,
+            child: _MiniAppIcon(path: appIconPath),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BubbleAvatar extends StatelessWidget {
+  const _BubbleAvatar({
+    required this.title,
+    required this.avatarPath,
+    required this.appIconPath,
+  });
+
+  final String title;
+  final String? avatarPath;
+  final String? appIconPath;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 34,
+      height: 34,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: <Widget>[
+          Positioned.fill(
+            child: _MainAvatar(
+              title: title,
+              path: avatarPath,
+              radius: 17,
+            ),
+          ),
+          Positioned(
+            right: -1,
+            bottom: -1,
             child: _MiniAppIcon(path: appIconPath),
           ),
         ],
@@ -231,26 +478,29 @@ class _MainAvatar extends StatelessWidget {
   const _MainAvatar({
     required this.title,
     required this.path,
+    required this.radius,
   });
 
   final String title;
   final String? path;
+  final double radius;
 
   @override
   Widget build(BuildContext context) {
     final file = path == null ? null : File(path!);
     final hasImage = file?.existsSync() ?? false;
     return CircleAvatar(
-      radius: 28,
-      backgroundColor: const Color(0xFF4B4A57),
+      radius: radius,
+      backgroundColor: const Color(0xFF495469),
       backgroundImage: hasImage ? FileImage(file!) : null,
       child: hasImage
           ? null
           : Text(
-              title.trim().isEmpty ? '?' : title.trim().characters.first.toUpperCase(),
-              style: const TextStyle(
+              title.trim().isEmpty ? '?' : title.trim().characters.first,
+              style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
+                fontSize: radius * 0.8,
               ),
             ),
     );
@@ -267,30 +517,25 @@ class _MiniAppIcon extends StatelessWidget {
     final file = path == null ? null : File(path!);
     final hasImage = file?.existsSync() ?? false;
     return Container(
-      width: 22,
-      height: 22,
+      width: 14,
+      height: 14,
       decoration: BoxDecoration(
-        color: const Color(0xFF2E2D37),
+        color: const Color(0xFF292B36),
         shape: BoxShape.circle,
-        border: Border.all(color: const Color(0xFF2E2D37), width: 2),
+        border: Border.all(color: const Color(0xFF292B36), width: 1.5),
       ),
       child: ClipOval(
         child: hasImage
             ? Image.file(file!, fit: BoxFit.cover)
             : const ColoredBox(
-                color: Color(0xFF2094F3),
-                child: Icon(Icons.notifications, color: Colors.white, size: 12),
+                color: Color(0xFF61A8FF),
+                child: Icon(
+                  Icons.notifications_rounded,
+                  color: Colors.white,
+                  size: 9,
+                ),
               ),
       ),
     );
   }
-}
-
-String _historyTimeLabel(DateTime timestamp) {
-  final month = timestamp.month.toString().padLeft(2, '0');
-  final day = timestamp.day.toString().padLeft(2, '0');
-  final hour = timestamp.hour % 12 == 0 ? 12 : timestamp.hour % 12;
-  final minute = timestamp.minute.toString().padLeft(2, '0');
-  final suffix = timestamp.hour >= 12 ? 'pm' : 'am';
-  return '$day/$month  $hour:$minute $suffix';
 }

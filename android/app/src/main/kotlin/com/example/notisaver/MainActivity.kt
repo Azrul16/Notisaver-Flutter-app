@@ -45,6 +45,22 @@ class MainActivity : FlutterActivity() {
                     result.success(NotificationStore.consumePending(this))
                 }
 
+                "getReliabilityStatus" -> {
+                    result.success(
+                        ReliabilityStore.snapshot(
+                            context = this,
+                            notificationAccessEnabled = NotificationAccessHelper.isEnabled(this),
+                            batteryOptimizationIgnored = BatteryHelper.isIgnoringOptimizations(this),
+                            pendingCount = NotificationStore.pendingCount(this)
+                        )
+                    )
+                }
+
+                "refreshListenerBinding" -> {
+                    NotificationAccessHelper.refreshListenerBinding(this)
+                    result.success(null)
+                }
+
                 else -> result.notImplemented()
             }
         }
@@ -107,6 +123,12 @@ object NotificationStore {
         }
         file.writeText("[]")
         return items
+    }
+
+    @Synchronized
+    fun pendingCount(context: android.content.Context): Int {
+        val file = pendingFile(context)
+        return JSONArray(readQueue(file)).length()
     }
 
     private fun pendingFile(context: android.content.Context): File {
