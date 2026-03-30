@@ -2,6 +2,7 @@ package com.example.notisaver
 
 import android.content.Intent
 import android.provider.Settings
+import android.util.AtomicFile
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
@@ -9,6 +10,7 @@ import io.flutter.plugin.common.MethodChannel
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.io.FileOutputStream
 
 class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -39,6 +41,18 @@ class MainActivity : FlutterActivity() {
 
                 "getInstalledApps" -> {
                     result.success(InstalledAppsHelper.getInstalledApps(this))
+                }
+
+                "getDevicePowerProfile" -> {
+                    result.success(DeviceSupportHelper.powerProfile())
+                }
+
+                "openAutoStartSettings" -> {
+                    result.success(DeviceSupportHelper.openAutoStartSettings(this))
+                }
+
+                "openAppDetailsSettings" -> {
+                    result.success(DeviceSupportHelper.openAppDetailsSettings(this))
                 }
 
                 "consumePendingNotifications" -> {
@@ -96,7 +110,7 @@ object NotificationStore {
         val file = pendingFile(context)
         val array = JSONArray(readQueue(file))
         array.put(JSONObject(payload))
-        file.writeText(array.toString())
+        writeQueue(file, array.toString())
     }
 
     @Synchronized
@@ -121,7 +135,7 @@ object NotificationStore {
                 )
             )
         }
-        file.writeText("[]")
+        writeQueue(file, "[]")
         return items
     }
 
@@ -140,10 +154,24 @@ object NotificationStore {
             if (!file.exists()) {
                 "[]"
             } else {
-                file.readText().ifBlank { "[]" }
+                String(AtomicFile(file).readFully()).ifBlank { "[]" }
             }
         } catch (_: Exception) {
             "[]"
+        }
+    }
+
+    private fun writeQueue(file: File, content: String) {
+        val atomicFile = AtomicFile(file)
+        var output: FileOutputStream? = null
+        try {
+            output = atomicFile.startWrite()
+            output.write(content.toByteArray())
+            output.flush()
+            atomicFile.finishWrite(output)
+        } catch (exception: Exception) {
+            output?.let { atomicFile.failWrite(it) }
+            throw exception
         }
     }
 }

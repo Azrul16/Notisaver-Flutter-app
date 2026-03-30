@@ -21,6 +21,32 @@ class NotificationListener : NotificationListenerService() {
             return
         }
 
+        try {
+            val payload = buildPayload(sbn)
+            ReliabilityStore.markNotificationCaptured(applicationContext)
+            NotificationStore.enqueue(applicationContext, payload)
+            runCatching {
+                NotificationBridge.emit(payload)
+            }
+        } catch (_: Exception) {
+            val fallbackPayload = buildFallbackPayload(sbn)
+            ReliabilityStore.markNotificationCaptured(applicationContext)
+            runCatching {
+                NotificationStore.enqueue(applicationContext, fallbackPayload)
+            }
+        }
+    }
+
+    private fun resolveAppName(packageName: String): String {
+        return try {
+            val applicationInfo = packageManager.getApplicationInfo(packageName, 0)
+            packageManager.getApplicationLabel(applicationInfo).toString()
+        } catch (_: Exception) {
+            packageName
+        }
+    }
+
+    private fun buildPayload(sbn: StatusBarNotification): Map<String, Any?> {
         val extras = sbn.notification.extras
         val title = extras?.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
         val text = extras?.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty()
@@ -33,32 +59,41 @@ class NotificationListener : NotificationListenerService() {
             textLines.isNotBlank() -> textLines
             else -> text
         }
-        val avatarPath = NotificationIconHelper.saveAvatar(this, sbn)
-        val appIconPath = NotificationIconHelper.saveAppIcon(this, sbn.packageName)
-        val payload = mapOf(
+
+        return buildFallbackPayload(
+            sbn = sbn,
+            title = title,
+            message = fullMessage,
+            subText = extras?.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString().orEmpty(),
+            avatarPath = NotificationIconHelper.saveAvatar(this, sbn),
+            appIconPath = NotificationIconHelper.saveAppIcon(this, sbn.packageName),
+        )
+    }
+
+    private fun buildFallbackPayload(
+        sbn: StatusBarNotification,
+        title: String? = null,
+        message: String? = null,
+        subText: String? = null,
+        avatarPath: String? = null,
+        appIconPath: String? = null,
+    ): Map<String, Any?> {
+        val extras = sbn.notification.extras
+        return mapOf(
             "appName" to resolveAppName(sbn.packageName),
             "packageName" to sbn.packageName,
-            "title" to title,
-            "message" to fullMessage,
-            "subText" to extras?.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString().orEmpty(),
+            "title" to (title ?: extras?.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()),
+            "message" to (
+                message ?: extras?.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty()
+            ),
+            "subText" to (
+                subText ?: extras?.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString().orEmpty()
+            ),
             "timestamp" to sbn.postTime,
             "notificationKey" to (sbn.key ?: ""),
             "category" to (sbn.notification.category ?: ""),
             "avatarPath" to avatarPath,
-            "appIconPath" to appIconPath
+            "appIconPath" to appIconPath,
         )
-
-        ReliabilityStore.markNotificationCaptured(applicationContext)
-        NotificationStore.enqueue(applicationContext, payload)
-        NotificationBridge.emit(payload)
-    }
-
-    private fun resolveAppName(packageName: String): String {
-        return try {
-            val applicationInfo = packageManager.getApplicationInfo(packageName, 0)
-            packageManager.getApplicationLabel(applicationInfo).toString()
-        } catch (_: Exception) {
-            packageName
-        }
     }
 }

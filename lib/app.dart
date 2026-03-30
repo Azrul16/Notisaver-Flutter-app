@@ -33,6 +33,12 @@ class _NotiSaverAppState extends State<NotiSaverApp>
   bool _hasCompletedPermissionSetup = false;
   bool _notificationAccessEnabled = false;
   bool _batteryOptimizationIgnored = false;
+  DevicePowerProfile _devicePowerProfile = const DevicePowerProfile(
+    manufacturer: '',
+    brand: '',
+    model: '',
+    isXiaomiFamily: false,
+  );
   bool _darkModeEnabled = false;
   bool _unreadFirstEnabled = true;
   bool _appGroupingEnabled = true;
@@ -77,6 +83,7 @@ class _NotiSaverAppState extends State<NotiSaverApp>
     final exactMatchSearchEnabledFuture =
         _settingsRepository.getExactMatchSearchEnabled();
     final excludedPackagesFuture = _settingsRepository.getExcludedPackages();
+    final devicePowerProfileFuture = _androidBridgeService.getDevicePowerProfile();
 
     final hasCompletedPermissionSetup = await hasCompletedPermissionSetupFuture;
     final darkModeEnabled = await darkModeEnabledFuture;
@@ -85,6 +92,7 @@ class _NotiSaverAppState extends State<NotiSaverApp>
     final searchScopeValue = await searchScopeFuture;
     final exactMatchSearchEnabled = await exactMatchSearchEnabledFuture;
     final excludedPackages = await excludedPackagesFuture;
+    final devicePowerProfile = await devicePowerProfileFuture;
 
     await _notificationRepository
         .purgeOlderThan(SettingsRepository.defaultAutoDeleteDays);
@@ -117,6 +125,7 @@ class _NotiSaverAppState extends State<NotiSaverApp>
       );
       _exactMatchSearchEnabled = exactMatchSearchEnabled;
       _excludedPackages = excludedPackages;
+      _devicePowerProfile = devicePowerProfile;
       _notificationAccessEnabled = statuses.notificationAccessEnabled;
       _batteryOptimizationIgnored = statuses.batteryOptimizationIgnored;
       _notifications = notifications;
@@ -358,6 +367,7 @@ class _NotiSaverAppState extends State<NotiSaverApp>
                   ? PermissionSetupScreen(
                       notificationAccessEnabled: _notificationAccessEnabled,
                       batteryOptimizationIgnored: _batteryOptimizationIgnored,
+                      devicePowerProfile: _devicePowerProfile,
                       onOpenNotificationAccess: () async {
                         await _androidBridgeService
                             .openNotificationAccessSettings();
@@ -366,6 +376,8 @@ class _NotiSaverAppState extends State<NotiSaverApp>
                         await _androidBridgeService
                             .requestIgnoreBatteryOptimizations();
                       },
+                      onOpenAutoStartSettings:
+                          _androidBridgeService.openAutoStartSettings,
                       onContinue: _completePermissionSetup,
                     )
                   : HomeScreen(
@@ -390,6 +402,7 @@ class _NotiSaverAppState extends State<NotiSaverApp>
                       exactMatchSearchEnabled: _exactMatchSearchEnabled,
                       notificationAccessEnabled: _notificationAccessEnabled,
                       batteryOptimizationIgnored: _batteryOptimizationIgnored,
+                      devicePowerProfile: _devicePowerProfile,
                       onDarkModeChanged: _toggleDarkMode,
                       onUnreadFirstChanged: _updateUnreadFirstEnabled,
                       onAppGroupingChanged: _updateAppGroupingEnabled,
@@ -406,6 +419,10 @@ class _NotiSaverAppState extends State<NotiSaverApp>
                             .requestIgnoreBatteryOptimizations();
                         await _refreshPermissionStatus();
                       },
+                      onOpenAutoStartSettings:
+                          _androidBridgeService.openAutoStartSettings,
+                      onOpenAppDetailsSettings:
+                          _androidBridgeService.openAppDetailsSettings,
                       onOpenAppFilter: _openAppFilter,
                       onLoadReliabilityStatus:
                           _androidBridgeService.getReliabilityStatus,
